@@ -18,6 +18,12 @@ export const createCampaignSchema = z.object({
   category: z.string().min(2).max(60),
   goalAmount: z.number().positive(),
   deadline: z.string().datetime().optional(),
+  coverImageUrl: z.string().url().optional(),
+  galleryImages: z.array(z.string().url()).optional(),
+  neighborhood: z.string().max(80).optional(),
+  address: z.string().max(200).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export const updateCampaignSchema = createCampaignSchema.partial().extend({

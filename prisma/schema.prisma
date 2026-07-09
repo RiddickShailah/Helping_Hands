@@ -50,6 +50,12 @@ model Campaign {
   raisedAmount  Float           @default(0)
   status        CampaignStatus  @default(ACTIVE)
   deadline      DateTime?
+  coverImageUrl String?
+  galleryImages String          @default("[]") // JSON array of image URLs
+  neighborhood  String?
+  address       String?
+  latitude      Float?
+  longitude     Float?
   organizerId   String
   organizer     User            @relation("CampaignOrganizer", fields: [organizerId], references: [id])
   donations     Donation[]

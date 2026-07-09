@@ -79,6 +79,7 @@ router.post(
       data: {
         ...data,
         deadline: data.deadline ? new Date(data.deadline) : undefined,
+        galleryImages: JSON.stringify(data.galleryImages ?? []),
         organizerId: req.user!.sub,
       },
     });
@@ -100,7 +101,13 @@ router.put(
     const data = updateCampaignSchema.parse(req.body);
     const campaign = await prisma.campaign.update({
       where: { id: req.params.id },
-      data: { ...data, deadline: data.deadline ? new Date(data.deadline) : undefined },
+      data: {
+        ...data,
+        deadline: data.deadline ? new Date(data.deadline) : undefined,
+        galleryImages: data.galleryImages
+          ? JSON.stringify(data.galleryImages)
+          : undefined,
+      },
     });
     res.json(campaign);
   })

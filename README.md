@@ -1,120 +1,92 @@
-# 🤝 Helping Hands — AI Community Donation Platform (Backend)
+# 🤝 Helping Hands — Community Donation & Volunteer Platform
 
-A production-ready REST API for a community-driven social impact platform. Built with **TypeScript, Express, and Prisma**, it powers the full campaign lifecycle for a donation and volunteer coordination platform: **campaign creation, discovery, donation processing, and volunteer commitment tracking.**
+A full-stack community impact platform: **Express + Prisma REST API** powering a **Next.js community UI** with an interactive map, photo-rich campaign stories, donations, and volunteer sign-ups.
 
-> Originally built for a hackathon (Spring 2026) across a distributed team, under live-demo time constraints, and validated against a field of 300+ concurrent participants.
+> Built for a hackathon (Spring 2026) — validated against 300+ concurrent participants.
 
-## Features
+## What's included
 
-- **Campaign lifecycle management** — create, update, discover, and close fundraising campaigns
-- **Donation processing** — atomic transactions that record donations and update campaign totals in real time
-- **Volunteer coordination** — commit hours to a campaign, track status (pending → confirmed → completed)
-- **Auth & roles** — JWT-based auth with `ADMIN` / `ORGANIZER` / `DONOR` roles and ownership checks
-- **Discovery** — search, filter by category/status, and paginate campaigns
-- **Live stats endpoint** — aggregate platform metrics for a dashboard or demo screen
-- **Validation & error handling** — Zod schema validation, centralized error middleware, rate limiting, Helmet
-- **Tests** — integration tests covering the core campaign → donation → volunteer flow
+| Layer | Stack | Features |
+|---|---|---|
+| **API** | TypeScript, Express, Prisma, SQLite | Campaigns, donations, volunteers, JWT auth, stats |
+| **Web UI** | Next.js 14, Tailwind, Leaflet | Community map, photo stories, donate & volunteer forms |
 
-## Tech Stack
+### Web UI highlights
+- **Interactive community map** — every campaign pinned by neighborhood (Leaflet + OpenStreetMap)
+- **Photo-rich campaigns** — cover images + gallery grids on every card
+- **Community Stories** — masonry photo wall from all campaign galleries
+- **Donate & volunteer** — forms wired to the live API
+- **Live stats dashboard** — total raised, volunteers, hours committed
+- **Mock data fallback** — UI works even if the API isn't running
 
-| Layer          | Choice                          |
-|----------------|----------------------------------|
-| Language       | TypeScript                       |
-| Runtime        | Node.js + Express                |
-| Database/ORM   | Prisma + SQLite (swap to Postgres for prod) |
-| Auth           | JWT (`jsonwebtoken`, `bcryptjs`) |
-| Validation     | Zod                               |
-| Testing        | Vitest + Supertest                |
+---
 
-## Project Structure
+## Run locally (see the UI)
 
-```
-helping-hands-api/
-├── prisma/
-│   ├── schema.prisma       # Data model: User, Campaign, Donation, VolunteerCommitment
-│   └── seed.ts             # Demo data for local/live-demo use
-├── src/
-│   ├── config/db.ts        # Prisma client singleton
-│   ├── middleware/         # auth (JWT), centralized error handling
-│   ├── routes/              # auth, campaigns, donations, volunteers, stats
-│   ├── types/schemas.ts    # Zod request validation schemas
-│   ├── utils/               # ApiError, asyncHandler, jwt helpers
-│   ├── app.ts               # Express app assembly
-│   └── index.ts             # Server entrypoint
-├── tests/
-│   └── campaigns.test.ts
-├── .env.example
-└── package.json
-```
-
-## Getting Started
-
-### 1. Install dependencies
+### Terminal 1 — API (port 4000)
 ```bash
+cd ~/Desktop/Projects/Helping_Hands
 npm install
-```
-
-### 2. Configure environment
-```bash
 cp .env.example .env
-```
-The default `.env` uses SQLite, so there's nothing else to configure for local development.
-
-### 3. Set up the database
-```bash
-npm run prisma:migrate   # creates the SQLite DB and applies the schema
-npm run seed              # optional: loads demo campaigns/donations/volunteers
-```
-
-### 4. Run the dev server
-```bash
+npm run prisma:push
+npm run seed
 npm run dev
 ```
-The API is now live at `http://localhost:4000`. Health check: `GET /health`.
 
-### 5. Run tests
+### Terminal 2 — Web UI (port 3000)
 ```bash
-npm test
+cd ~/Desktop/Projects/Helping_Hands/web
+npm install
+cp .env.example .env.local
+npm run dev
 ```
+
+Open **http://localhost:3000**
+
+| Page | URL | What to try |
+|---|---|---|
+| Home | `/` | Hero, stats, map preview, featured campaigns |
+| Campaigns | `/campaigns` | Browse all campaigns with photos |
+| Map | `/map` | Click pins, select from sidebar list |
+| Stories | `/stories` | Photo masonry grid |
+| Campaign detail | `/campaigns/:id` | Gallery, donate, volunteer |
+
+---
 
 ## API Overview
 
-| Method | Endpoint                                   | Auth              | Description |
-|--------|---------------------------------------------|-------------------|-------------|
-| POST   | `/api/auth/register`                        | —                 | Create an account |
-| POST   | `/api/auth/login`                           | —                 | Log in, get a JWT |
-| GET    | `/api/campaigns`                            | —                 | List/search/filter campaigns |
-| GET    | `/api/campaigns/:id`                        | —                 | Campaign detail |
-| POST   | `/api/campaigns`                            | Organizer/Admin   | Create a campaign |
-| PUT    | `/api/campaigns/:id`                        | Owner/Admin       | Update a campaign |
-| DELETE | `/api/campaigns/:id`                        | Owner/Admin       | Delete a campaign |
-| GET    | `/api/campaigns/:id/donations`              | —                 | List donations |
-| POST   | `/api/campaigns/:id/donations`              | —                 | Make a donation |
-| GET    | `/api/campaigns/:id/volunteers`             | —                 | List volunteer commitments |
-| POST   | `/api/campaigns/:id/volunteers`              | —                 | Commit as a volunteer |
-| PATCH  | `/api/volunteers/:id`                       | Auth required     | Update volunteer status/hours |
-| GET    | `/api/stats`                                | —                 | Platform-wide metrics |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/campaigns` | List/search campaigns (includes lat/lng, photos) |
+| GET | `/api/campaigns/:id` | Campaign detail |
+| POST | `/api/campaigns/:id/donations` | Make a donation |
+| POST | `/api/campaigns/:id/volunteers` | Sign up to volunteer |
+| GET | `/api/stats` | Platform metrics |
+| POST | `/api/auth/login` | JWT login |
 
-Full request/response shapes are defined in `src/types/schemas.ts`.
+Demo organizer: `organizer@helpinghands.dev` / `password123`
 
-### Example: create a campaign
-```bash
-curl -X POST http://localhost:4000/api/campaigns \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Winter Coat Drive",
-    "description": "Coats for families at local shelters.",
-    "category": "Community Aid",
-    "goalAmount": 5000
-  }'
+---
+
+## Deploy
+
+**API:** Render, Railway, or Fly.io — swap SQLite for Postgres in `prisma/schema.prisma`
+
+**Web UI:** [Vercel](https://vercel.com) — import repo, set root directory to `web`, add env `NEXT_PUBLIC_API_URL=https://your-api.onrender.com`
+
+---
+
+## Project structure
+
 ```
-
-## Production Notes
-
-- Swap `provider = "sqlite"` for `"postgresql"` in `prisma/schema.prisma` and point `DATABASE_URL` at a managed Postgres instance for production/scale.
-- Set a strong, unique `JWT_SECRET`.
-- Put the API behind a reverse proxy / platform (Render, Railway, Fly.io, AWS) with HTTPS.
+Helping_Hands/
+├── src/                 Express API
+├── prisma/              Schema + seed (8 campaigns with map pins & photos)
+├── web/                 Next.js community UI
+│   ├── app/             Home, campaigns, map, stories
+│   └── components/      CommunityMap, CampaignCard, etc.
+└── tests/
+```
 
 ## License
 

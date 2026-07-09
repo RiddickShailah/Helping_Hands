@@ -6,10 +6,13 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+    "dev:web": "npm run dev --prefix web",
     "build": "tsc -p tsconfig.json",
+    "build:web": "npm run build --prefix web",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:push": "prisma db push",
     "seed": "ts-node prisma/seed.ts",
     "test": "vitest run",
     "lint": "eslint src --ext .ts"
@@ -17,7 +20,7 @@
   "keywords": ["donation-platform", "hackathon", "typescript", "express", "prisma", "social-impact"],
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^5.19.1",
+    "@prisma/client": "^6.2.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -37,7 +40,7 @@
     "@types/node": "^20.14.10",
     "@types/supertest": "^6.0.2",
     "nodemon": "^3.1.4",
-    "prisma": "^5.19.1",
+    "prisma": "^6.2.0",
     "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
