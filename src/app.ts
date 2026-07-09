@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 
 import authRouter from "./routes/auth";
 import campaignsRouter from "./routes/campaigns";
+import paymentsRouter from "./routes/payments";
 import statsRouter from "./routes/stats";
 import { volunteerByIdRouter } from "./routes/volunteers";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
@@ -25,6 +26,7 @@ export function createApp() {
   app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
   app.use("/api/auth", authRouter);
+  app.use("/api/payments", paymentsRouter);
   app.use("/api/campaigns", campaignsRouter);
   app.use("/api/volunteers", volunteerByIdRouter);
   app.use("/api/stats", statsRouter);

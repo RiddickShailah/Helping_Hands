@@ -3,36 +3,56 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ArrowLeft } from "lucide-react";
+import { MapPin, ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import type { Campaign } from "@/lib/types";
 import { parseGallery, progressPct } from "@/lib/types";
 import { donate, volunteer } from "@/lib/api";
+import { useAuth } from "@/components/AuthProvider";
+import SecureCheckout from "@/components/SecureCheckout";
+
+const PRESETS = [25, 50, 100];
 
 export default function CampaignDetailClient({ campaign }: { campaign: Campaign }) {
+  const { user } = useAuth();
   const gallery = parseGallery(campaign);
   const allPhotos = [campaign.coverImageUrl, ...gallery].filter(Boolean) as string[];
   const pct = progressPct(campaign);
   const [tab, setTab] = useState<"donate" | "volunteer">("donate");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState(25);
+  const [customAmount, setCustomAmount] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  async function handleDonate(e: React.FormEvent<HTMLFormElement>) {
+  const effectiveAmount = customAmount ? Number(customAmount) : amount;
+  const displayName = donorName || user?.name || "";
+  const displayEmail = donorEmail || user?.email || "";
+
+  async function recordDonation(receipt: { transactionId: string; last4: string }) {
+    await donate(campaign.id, {
+      donorName: displayName,
+      donorEmail: displayEmail,
+      amount: effectiveAmount,
+      message: message || undefined,
+    });
+    setMsg(`Thank you! $${effectiveAmount} donated · Ref ${receipt.transactionId}`);
+  }
+
+  function handleDonateContinue(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setMsg("");
-    const fd = new FormData(e.currentTarget);
-    try {
-      await donate(campaign.id, {
-        donorName: fd.get("name") as string,
-        donorEmail: fd.get("email") as string,
-        amount: Number(fd.get("amount")),
-        message: (fd.get("message") as string) || undefined,
-      });
-      setMsg("Thank you! Your donation was recorded.");
-    } catch {
-      setMsg("Could not reach API — start the backend with npm run dev (port 4000).");
+    if (!displayName.trim() || !displayEmail.trim()) {
+      setMsg("Please enter your name and email, or sign in to auto-fill.");
+      return;
     }
-    setLoading(false);
+    if (!effectiveAmount || effectiveAmount < 1) {
+      setMsg("Please choose a valid donation amount.");
+      return;
+    }
+    setMsg("");
+    setCheckoutOpen(true);
   }
 
   async function handleVolunteer(e: React.FormEvent<HTMLFormElement>) {
@@ -42,8 +62,8 @@ export default function CampaignDetailClient({ campaign }: { campaign: Campaign 
     const fd = new FormData(e.currentTarget);
     try {
       await volunteer(campaign.id, {
-        name: fd.get("name") as string,
-        email: fd.get("email") as string,
+        name: (fd.get("name") as string) || user?.name || "",
+        email: (fd.get("email") as string) || user?.email || "",
         role: fd.get("role") as string,
         hoursCommitted: Number(fd.get("hours")),
       });
@@ -114,19 +134,99 @@ export default function CampaignDetailClient({ campaign }: { campaign: Campaign 
           </div>
 
           {tab === "donate" ? (
-            <form onSubmit={handleDonate} className="mt-4 space-y-3">
-              <input name="name" required placeholder="Your name" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
-              <input name="email" type="email" required placeholder="Email" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
-              <input name="amount" type="number" min="1" required placeholder="Amount ($)" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
-              <textarea name="message" placeholder="Message (optional)" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm min-h-[60px]" />
-              <button type="submit" disabled={loading} className="w-full bg-coral text-white py-3 rounded-lg font-semibold disabled:opacity-50">
-                Donate now
+            <form onSubmit={handleDonateContinue} className="mt-4 space-y-3">
+              {user ? (
+                <div className="flex items-center gap-2 text-xs text-teal bg-teal/5 border border-teal/20 rounded-lg px-3 py-2">
+                  <ShieldCheck size={14} />
+                  Signed in as <span className="font-semibold">{user.name}</span> — details auto-filled
+                </div>
+              ) : (
+                <p className="text-xs text-slate">
+                  <Link href="/login" className="text-teal font-medium hover:underline">Sign in</Link>
+                  {" "}to auto-fill your details securely.
+                </p>
+              )}
+
+              {!user && (
+                <>
+                  <input
+                    name="name"
+                    required
+                    placeholder="Your name"
+                    value={donorName}
+                    onChange={(e) => setDonorName(e.target.value)}
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30"
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="Email"
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30"
+                  />
+                </>
+              )}
+
+              <div>
+                <p className="text-xs font-medium text-slate mb-2">Choose amount</p>
+                <div className="flex gap-2">
+                  {PRESETS.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => { setAmount(p); setCustomAmount(""); }}
+                      className={`flex-1 py-2 rounded-lg text-sm font-semibold border ${
+                        amount === p && !customAmount
+                          ? "bg-teal text-white border-teal"
+                          : "bg-white text-slate border-stone-200 hover:border-teal/40"
+                      }`}
+                    >
+                      ${p}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Custom amount ($)"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="w-full mt-2 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30"
+                />
+              </div>
+
+              <textarea
+                placeholder="Message (optional)"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-teal/30"
+              />
+
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-2 bg-coral text-white py-3 rounded-lg font-semibold hover:bg-coral/90"
+              >
+                <Lock size={16} />
+                Continue to secure checkout
               </button>
+              <p className="text-[10px] text-center text-slate">
+                Demo Visa 4242 ·••• 4242 · no real charges
+              </p>
             </form>
           ) : (
             <form onSubmit={handleVolunteer} className="mt-4 space-y-3">
-              <input name="name" required placeholder="Your name" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
-              <input name="email" type="email" required placeholder="Email" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
+              {user ? (
+                <div className="text-xs text-teal bg-teal/5 border border-teal/20 rounded-lg px-3 py-2">
+                  Volunteering as <span className="font-semibold">{user.name}</span>
+                </div>
+              ) : (
+                <>
+                  <input name="name" required placeholder="Your name" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
+                  <input name="email" type="email" required placeholder="Email" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
+                </>
+              )}
               <input name="role" required placeholder="How you'd like to help" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
               <input name="hours" type="number" min="1" required placeholder="Hours you can commit" className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" />
               <button type="submit" disabled={loading} className="w-full bg-teal text-white py-3 rounded-lg font-semibold disabled:opacity-50">
@@ -137,6 +237,15 @@ export default function CampaignDetailClient({ campaign }: { campaign: Campaign 
           {msg && <p className="text-sm mt-3 text-teal-dark">{msg}</p>}
         </div>
       </div>
+
+      <SecureCheckout
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        amount={effectiveAmount}
+        campaignId={campaign.id}
+        campaignTitle={campaign.title}
+        onSuccess={recordDonation}
+      />
     </div>
   );
 }

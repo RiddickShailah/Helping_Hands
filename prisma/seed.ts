@@ -139,17 +139,25 @@ async function main() {
   await prisma.volunteerCommitment.deleteMany();
   await prisma.donation.deleteMany();
   await prisma.campaign.deleteMany();
+  await prisma.user.deleteMany();
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
-  const organizer = await prisma.user.upsert({
-    where: { email: "organizer@helpinghands.dev" },
-    update: {},
-    create: {
+  const organizer = await prisma.user.create({
+    data: {
       name: "Jordan Reyes",
       email: "organizer@helpinghands.dev",
       passwordHash,
       role: "ORGANIZER",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      name: "Alex Morgan",
+      email: "donor@helpinghands.dev",
+      passwordHash,
+      role: "DONOR",
     },
   });
 
@@ -196,7 +204,10 @@ async function main() {
   }
 
   console.log(`✅ Seeded ${CAMPAIGNS.length} campaigns with photos & map pins.`);
-  console.log("   Organizer login: organizer@helpinghands.dev / password123");
+  console.log("   Demo logins (password: password123):");
+  console.log("   · Donor:     donor@helpinghands.dev");
+  console.log("   · Organizer: organizer@helpinghands.dev");
+  console.log("   Demo card:   4242 4242 4242 4242 · 12/28 · CVC 123");
 }
 
 main()

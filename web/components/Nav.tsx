@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import NavAuth from "@/components/NavAuth";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -24,6 +25,7 @@ export default function Nav() {
             </Link>
           ))}
         </nav>
+        <NavAuth />
       </div>
       <BottomNav />
     </header>

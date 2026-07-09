@@ -1,7 +1,37 @@
 import type { Campaign } from "./types";
+import type { AuthUser } from "./auth";
 import { MOCK_CAMPAIGNS } from "./mock-campaigns";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+export async function login(email: string, password: string): Promise<{ token: string; user: AuthUser }> {
+  const res = await fetch(`${API}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error("Login failed");
+  return res.json();
+}
+
+export async function processDemoPayment(data: {
+  cardNumber: string;
+  expMonth: string;
+  expYear: string;
+  cvc: string;
+  zip: string;
+  amount: number;
+  campaignId: string;
+}) {
+  const res = await fetch(`${API}/api/payments/demo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error ?? json.message ?? "Payment failed");
+  return json as { transactionId: string; last4: string; status: string };
+}
 
 export async function fetchCampaignsClient(): Promise<Campaign[]> {
   try {

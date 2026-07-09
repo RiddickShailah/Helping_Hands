@@ -37,6 +37,9 @@ export default async function HomePage() {
             <Link href="/campaigns" className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-medium hover:bg-white/10">
               Browse Campaigns
             </Link>
+            <Link href="/login" className="rounded-full bg-white/15 border border-white/30 px-5 py-2.5 text-sm font-medium hover:bg-white/25">
+              Demo sign in →
+            </Link>
           </div>
         </div>
       </section>

@@ -9,12 +9,15 @@ A full-stack community impact platform: **Express + Prisma REST API** powering a
 | Layer | Stack | Features |
 |---|---|---|
 | **API** | TypeScript, Express, Prisma, SQLite | Campaigns, donations, volunteers, JWT auth, stats |
-| **Web UI** | Next.js 14, Tailwind, Leaflet | Community map, photo stories, donate & volunteer forms |
+| **Web UI** | Next.js 14, Tailwind, Leaflet | Community map, photo stories, secure demo checkout, JWT login |
 
 ### Web UI highlights
 - **Interactive community map** — every campaign pinned by neighborhood (Leaflet + OpenStreetMap)
 - **Photo-rich campaigns** — cover images + gallery grids on every card
 - **Community Stories** — masonry photo wall from all campaign galleries
+- **Secure demo checkout** — PCI-style payment flow with demo Visa card (no real charges)
+- **Demo login** — one-click sign-in as donor or organizer
+- **Trust & security UX** — encryption banner, trust badges, JWT sessions in sessionStorage
 - **Donate & volunteer** — forms wired to the live API
 - **Live stats dashboard** — total raised, volunteers, hours committed
 - **Mock data fallback** — UI works even if the API isn't running
@@ -49,7 +52,26 @@ Open **http://localhost:3000**
 | Campaigns | `/campaigns` | Browse all campaigns with photos |
 | Map | `/map` | Click pins, select from sidebar list |
 | Stories | `/stories` | Photo masonry grid |
-| Campaign detail | `/campaigns/:id` | Gallery, donate, volunteer |
+| Campaign detail | `/campaigns/:id` | Gallery, secure donate checkout, volunteer |
+| Sign in | `/login` | Demo donor & organizer one-click login |
+
+### Demo credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Donor | `donor@helpinghands.dev` | `password123` |
+| Organizer | `organizer@helpinghands.dev` | `password123` |
+
+### Demo payment card
+
+| Field | Value |
+|---|---|
+| Card | `4242 4242 4242 4242` |
+| Expiry | `12/28` |
+| CVC | `123` |
+| ZIP | `30303` |
+
+Click **Use demo card** in checkout to auto-fill. No real charges are made.
 
 ---
 
@@ -63,8 +85,9 @@ Open **http://localhost:3000**
 | POST | `/api/campaigns/:id/volunteers` | Sign up to volunteer |
 | GET | `/api/stats` | Platform metrics |
 | POST | `/api/auth/login` | JWT login |
+| POST | `/api/payments/demo` | Demo card validation & sandbox authorization |
 
-Demo organizer: `organizer@helpinghands.dev` / `password123`
+Demo accounts — see table above.
 
 ---
 
